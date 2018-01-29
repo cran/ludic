@@ -1,16 +1,18 @@
 Package: ludic
 Type: Package
 Title: Linkage Using Diagnosis Codes
-Version: 0.1.5
-Date: 2016-12-29
+Version: 0.1.6
+Date: 2018-01-28
 Author: Boris Hejblum, Tianxi Cai
 Maintainer: Boris Hejblum <bhejblum@hsph.harvard.edu>
 LinkingTo: Rcpp, RcppArmadillo
-Imports: fGarch, Rcpp (>= 0.12.2), landpred, Matrix
+Depends: R (>= 3.0.0), Rcpp (>= 0.12.11),
+Imports: fGarch, landpred, Matrix
 Description: Probabilistic record linkage without direct identifiers using only diagnosis codes.
 License: MIT + file LICENSE
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
+Suggests: testthat
 NeedsCompilation: yes
-Packaged: 2016-12-29 00:55:20 UTC; borishejblum
+Packaged: 2018-01-29 00:39:16 UTC; borishejblum
 Repository: CRAN
-Date/Publication: 2016-12-29 11:52:17
+Date/Publication: 2018-01-29 04:22:21 UTC

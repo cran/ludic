@@ -1,8 +1,10 @@
 #'Probabilistic Patient Record Linkage
 #'
-#'@param data1 either a binary matrix or binary dataframe of dimension \code{nA x K} whose rownames are the observation identifiers.
+#'@param data1 either a binary (\code{1} or \code{0} values only) matrix or binary 
+#'data frame of dimension \code{n1 x K} whose rownames are the observation identifiers.
 #'
-#'@param data2 either a binary matrix or a binary dataframe of dimension \code{nB x K} whose rownames are the observation identifiers.
+#'@param data2 either a binary (\code{1} or \code{0} values only) matrix or a binary
+#'data frame of dimension \code{n2 x K} whose rownames are the observation identifiers.
 #'
 #'@param data1_cont2diff either a matrix or dataframe of continuous features, 
 #'such as age, for which the similarity measure uses the difference with 
@@ -16,7 +18,7 @@
 #'
 #'@param eps_minus discrepancy rate between \code{data2} and \code{data1}
 #'
-#'@param aggreg_2ways a charatcer string indicating how to merge the posterior two 
+#'@param aggreg_2ways a character string indicating how to merge the posterior two 
 #'probability matrices obtained for each of the 2 databases. Four possibility are 
 #'currently implemented: \code{"maxnorm"}, \code{"max"}, \code{"min"}, \code{"mean"} 
 #'and \code{"prod"}. Default is \code{"mean"}.
@@ -25,14 +27,14 @@
 #'Default is 1\%.
 #'
 #'@param d_max a numeric vector of length \code{K} giving the minimum difference 
-#'from which it is considered a discrepency.
+#'from which it is considered a discrepancy.
 #'
-#'@param use_diff logical flag indicating whether continuous diffenrentiable variables should be used in the 
+#'@param use_diff logical flag indicating whether continuous differentiable variables should be used in the 
 #'
-#'@param dates1 matrix or dataframe of dimension \code{nA x K} including the concatenated dates intervals for each corresponding 
+#'@param dates1 matrix or dataframe of dimension \code{n1 x K} including the concatenated dates intervals for each corresponding 
 #'diagnosis codes in \code{data1}. Default is \code{NULL} in which case dates are not used.
 #'
-#'@param dates2 matrix or dataframe of dimension \code{nB x K} including the concatenated dates intervals for each corresponding 
+#'@param dates2 matrix or dataframe of dimension \code{n2 x K} including the concatenated dates intervals for each corresponding 
 #'diagnosis codes in \code{data2}. Default is \code{NULL} in which case dates are not used. See details.
 #'
 #'@details \code{Dates:} the use of \code{dates1} and \code{dates2} requires that at least one date interval matches across 
@@ -42,12 +44,12 @@
 #@param eps_inf discrepancy rate for the differentiable variables
 #'
 #'@references Hejblum BP, Weber G, Liao KP, Palmer N, Churchill S, Szolovits P, Murphy S, Kohane I, Cai T 
-#'Probabilistic Record Linkage of De-Identified Research Datasets Using Diagnosis Codes, \emph{submitted}, 2016.
+#'Probabilistic Record Linkage of De-Identified Research Datasets Using Diagnosis Codes, \emph{submitted}, 2017.
 #'
 #'@importFrom landpred VTM
 #'@importFrom fGarch dsstd sstdFit
 #'
-#'@return the posterior probability of matching matrix
+#'@return a matrix of size \code{n1 x n2} with the posterior probability of matching for each \code{n1*n2} pair
 #'
 #'@examples
 #'set.seed(123)
@@ -57,14 +59,14 @@
 #'bin_codes <- rbinom(n=npat*ncodes, size=1,  prob=rep(incid, npat))
 #'bin_codes_mat <- matrix(bin_codes, ncol=ncodes, byrow = TRUE)
 #'data1_ex <- bin_codes_mat[1:(npat/2+npat/10),]
-#'data2_ex <- bin_codes_mat[c(1:(npat/10), (npat/2+npat/10 + 1):npat),]
+#'data2_ex <- bin_codes_mat[c(1:(npat/10), (npat/2+npat/10 + 1):npat), ]
 #'rownames(data1_ex) <- paste0("ID", 1:(npat/2+npat/10), "_data1")
 #'rownames(data2_ex) <- paste0("ID", c(1:(npat/10), (npat/2+npat/10 + 1):npat), "_data2")
 #'
 #'\dontrun{
 #'res <- recordLink(data1 = data1_ex, data2 = data2_ex, 
 #'                  use_diff = FALSE, eps_minus = 0.01, eps_plus = 0.01)
-#'round(res[c(1:3, 20:23), c(1:3, 20:23)], 3)
+#'round(res[c(1:3, 19:23), c(1:3, 19:23)], 3)
 #'}
 #'
 #'@export
@@ -81,8 +83,8 @@ recordLink <- function(data1, data2, dates1 = NULL, dates2 = NULL,
   if(ncol(data2)!=nb_feat){stop("Number of columns in data2 is different from data1")}
   n1 <- nrow(data1)
   n2 <- nrow(data2)
-  if((is.null(data1_cont2diff) || is.null(data2_cont2diff)) && use_diff){
-    stop("cannot 'use_diff' when 'data1_cont2diff' and/or 'data2_cont2diff' is NULL")
+  if((is.null(data1_cont2diff) | is.null(data2_cont2diff)) && use_diff){
+    stop("cannot 'use_diff' when 'data1_cont2diff' and/or 'data2_cont2diff' is NULL\n Probably need to set 'use_diff = FALSE'")
   }
   if((is.null(dates1) & !is.null(dates2)) | (!is.null(dates1) & is.null(dates2))){
     stop("missing one of the dates tables")
@@ -105,7 +107,7 @@ recordLink <- function(data1, data2, dates1 = NULL, dates2 = NULL,
   ind1 <- rownames(data1)
   ind2 <- rownames(data2)
   
-  freq_select <- apply(X=(data1==1), MARGIN=2, FUN=mean)>min_prev
+  freq_select <- (colMeans(data1) > min_prev)
   data1_bin <- data1[,freq_select, drop=FALSE]
   data2_bin <- data2[,freq_select, drop=FALSE]
   if(datesNotNull){
@@ -197,21 +199,24 @@ recordLink <- function(data1, data2, dates1 = NULL, dates2 = NULL,
   colnames(dist_all) <- ind2
   rownames(dist_all) <- ind1
   
-  #sstdFit genrerates warnings - to be ignored
+  #sstdFit generates warnings - to be ignored
   if(length(dist_all)>10000){
-    sstdFit_1way <-  try(fGarch::sstdFit(x=sample(dist_all,10000)))
-    if(inherits(sstdFit_1way, "try-error")){sstdFit_1way <-  try(fGarch::sstdFit(x=sample(dist_all,10000)))}
+    sstdFit_1way <-  try(suppressWarnings(fGarch::sstdFit(x = sample(dist_all, 10000))), silent=TRUE)
+    if(inherits(sstdFit_1way, "try-error")){sstdFit_1way <-  try(suppressWarnings(fGarch::sstdFit(x = sample(dist_all,10000))), silent=TRUE)}
     tmp_est <-  sstdFit_1way$estimate
     for(i in 1:4){
-      sstdFit_1way_sub <-  try(fGarch::sstdFit(x=sample(dist_all,10000)))
-      if(inherits(sstdFit_1way_sub, "try-error")){sstdFit_1way_sub <-  try(fGarch::sstdFit(x=sample(dist_all,10000)))}
+      sstdFit_1way_sub <-  try(suppressWarnings(fGarch::sstdFit(x = sample(dist_all, 10000))), silent=TRUE)
+      if(inherits(sstdFit_1way_sub, "try-error")){sstdFit_1way_sub <-  try(suppressWarnings(fGarch::sstdFit(x = sample(dist_all, 10000))), silent=TRUE)}
       tmp_est <-  rbind(tmp_est, sstdFit_1way_sub$estimate)
     }
     sstdFit_1way$est <- colMeans(tmp_est, na.rm = TRUE)
   }else{
-    sstdFit_1way <-  try(fGarch::sstdFit(x=dist_all))
-    if(inherits(sstdFit_1way, "try-error")){sstdFit_1way <-  try(fGarch::sstdFit(x=dist_all))}
-    sstdFit_1way$est <-  sstdFit_1way$estimate
+    sstdFit_1way <-  try(suppressWarnings(fGarch::sstdFit(x = as.vector(dist_all))), silent=TRUE)
+    if(inherits(sstdFit_1way, "try-error")){sstdFit_1way <-  try(suppressWarnings(fGarch::sstdFit(x = as.vector(dist_all))), silent=TRUE)}
+    if(inherits(sstdFit_1way, "try-error")){
+      stop("Error in fitting the Student-t distribution")
+    }
+    sstdFit_1way$est <- sstdFit_1way$estimate
   }
   
   inter_x <- 0.1
