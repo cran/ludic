@@ -4,9 +4,10 @@
 \alias{recordLink}
 \title{Probabilistic Patient Record Linkage}
 \usage{
-recordLink(data1, data2, dates1 = NULL, dates2 = NULL, eps_plus, eps_minus,
-  aggreg_2ways = "mean", min_prev = 0.01, data1_cont2diff = NULL,
-  data2_cont2diff = NULL, d_max, use_diff = TRUE)
+recordLink(data1, data2, dates1 = NULL, dates2 = NULL, eps_plus,
+  eps_minus, aggreg_2ways = "mean", min_prev = 0.01,
+  data1_cont2diff = NULL, data2_cont2diff = NULL, d_max,
+  use_diff = TRUE)
 }
 \arguments{
 \item{data1}{either a binary (\code{1} or \code{0} values only) matrix or binary 
@@ -69,7 +70,7 @@ data2_ex <- bin_codes_mat[c(1:(npat/10), (npat/2+npat/10 + 1):npat), ]
 rownames(data1_ex) <- paste0("ID", 1:(npat/2+npat/10), "_data1")
 rownames(data2_ex) <- paste0("ID", c(1:(npat/10), (npat/2+npat/10 + 1):npat), "_data2")
 
-\dontrun{
+if(interactive()){
 res <- recordLink(data1 = data1_ex, data2 = data2_ex, 
                  use_diff = FALSE, eps_minus = 0.01, eps_plus = 0.01)
 round(res[c(1:3, 19:23), c(1:3, 19:23)], 3)
