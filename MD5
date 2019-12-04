@@ -1,13 +1,13 @@
-fd8d08c645c46aefb8fc6091be514fc3 *DESCRIPTION
+f1dedf0611bf81de8c43b7d1e6fc6bcd *DESCRIPTION
 b1e714c4190f3cebfe6345a1ef26ca0b *LICENSE
 48fb68da41bbcf1f0369f83e7ec6cede *NAMESPACE
-fb895186c5629c5c7e2cc018897443fc *NEWS.md
+bf9a8dac9ecb90b00fecf5bb4a03e069 *NEWS.md
 af03238f0d791a8910a734327117ef15 *R/RA.R
 addd90ed4c514e3dc43662451495b504 *R/RcppExports.R
 6bfbba72c814ba7a1ae331afb61e92fa *R/comb_pvals.R
-593441a581983ba8290aeab6a5d55195 *R/em_winkler.R
+de33e24f2c6183c60bb8436e84e56146 *R/em_winkler.R
 15fcbfd278fd67a74130f6a1902d1773 *R/logit.R
-e56a2d6b007299ed7cdc13a2c666b594 *R/ludic-package.R
+bd34663d7191480e978bb50993c6beb2 *R/ludic-package.R
 84d7cc7a03d3149360fcfd550532ad89 *R/pval_zscore.R
 64b1638b20bcfc91c7825d83c7da2d27 *R/recordLink.R
 0520e79824aee00412c4249c3c80708b *R/test_combine.R
