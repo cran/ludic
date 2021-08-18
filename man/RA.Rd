@@ -9,7 +9,8 @@
 \alias{RA2_11y}
 \alias{silverstandard_truematches}
 \title{Anonymized binarized diagnosis codes from RA study.}
-\format{5 objects\itemize{
+\format{
+5 objects\itemize{
      \item{\code{RA1_6y}:} an integer matrix of 0s and 1s containing 4,936 
      renamed diagnosis codes for 26,681 patients from the dataset RA1 recorded 
      over a 6-year time span.
@@ -30,7 +31,8 @@
      columns containing the identifiers of the 3,831 pairs of silver-standard 
      matches.
      
-}}
+}
+}
 \usage{
 data(RA)
 }
@@ -76,8 +78,8 @@ print.res_matching <- function(res, threshold=0.9, ref=silverstandard_truematche
  PPV_all <- sum(apply(bestmatched_pairs_all, 1, paste0, collapse="") 
                 \%in\% apply(ref, 1, paste0, collapse=""))/nP_all
  cat("threshold: ", threshold, 
-     "\\nnb matched: ", nP_all,"; nb true matches: ", nTM_all, 
-     "\\nTPR: ", TPR_all, ";   PPV: ", PPV_all, "\\n\\n", sep="")
+     "\nnb matched: ", nP_all,"; nb true matches: ", nTM_all, 
+     "\nTPR: ", TPR_all, ";   PPV: ", PPV_all, "\n\n", sep="")
 }
 print.res_matching(res_match_6y)
 print.res_matching(res_match_11y)
@@ -86,16 +88,18 @@ print.res_matching(res_match_11y)
 
 }
 \references{
-Hejblum, B. P. et al. Probabilistic Record Linkage of De-Identified 
-Research Datasets with Discrepancies Using Diagnosis Codes. \emph{submitted}.
+Hejblum BP, Weber G, Liao KP, Palmer N, Churchill S, Szolovits P, 
+Murphy S, Kohane I and Cai T, Probabilistic Record Linkage of De-Identified 
+Research Datasets Using Diagnosis Codes, \emph{Scientific Data}, 6:180298 (2019). 
+\doi{10.1038/sdata.2018.298}.
 
 Liao, K. P. et al. Electronic medical records for discovery research 
 in rheumatoid arthritis. \emph{Arthritis Care & Research} 62, 1120-1127 (2010). 
-\href{https://doi.org/10.1002/acr.20184}{10.1002/acr.20184}
+\doi{10.1002/acr.20184}
 
 Liao, K. P. et al. Methods to Develop an Electronic Medical Record 
 Phenotype Algorithm to Compare the Risk of Coronary Artery Disease across 3 
 Chronic Disease Cohorts. \emph{PLoS ONE} 10, e0136651 (2015). 
-\href{https://doi.org/10.1371/journal.pone.0136651}{10.1371/journal.pone.0136651}
+\doi{10.1371/journal.pone.0136651}
 }
 \keyword{datasets}

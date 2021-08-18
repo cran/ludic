@@ -10,7 +10,11 @@
 #'@param y response variable of length \code{n1}. Only binary phenotypes are supported at the moment.
 #'
 #'@param x a \code{matrix} or a \code{data.frame} of predictors of dimensions \code{n2 x p}. 
-#'An intercept is automatically within the function.
+#'An intercept is automatically added within the function.
+#'
+#'@param covar a \code{matrix} or a \code{data.frame} of variables to be adjusted on
+#'in the test of dimensions \code{n3 x p}. 
+#'Default is \code{NULL} in which case there is no adjustment.
 #'
 #'@param thresholds a vector (possibly of length \code{1}) containing the different threshold 
 #'to use to call a match. Default is \code{seq(from = 0.5, to = 0.95, by = 0.05)}.
@@ -28,6 +32,12 @@
 #'(in which case weighted mean is imputed for each individual who has at least
 #'one match with a posterior probability above the threshold). Default is 
 #'\code{"weighted average"}.
+#'
+#'@references Zhang HG, Hejblum BP, Weber G, Palmer N, Churchill S, Szolovits P, 
+#'Murphy S, Liao KP, Kohane I and Cai T, ATLAS: An automated association test using 
+#'probabilistically linked health records with application to genetic studies, 
+#'\emph{JAMIA}, in press (2021). 
+#'\doi{10.1101/2021.05.02.21256490}.
 #'
 #'@importFrom landpred VTM
 #'@importFrom fGarch dsstd sstdFit
@@ -60,32 +70,34 @@
 #'
 #'@examples
 #'#rm(list=ls())
-#'res <- list()
+#'
 #'n_sims <- 1#5000
-#'for(n in 1:n_sims){
-#'x <- matrix(ncol=2, nrow=99, stats::rnorm(n=99*2))
 #'
-#'#plot(density(rbeta(n=1000, 1,2)))
-#'match_prob <- matrix(rbeta(n=103*99, 1, 2), nrow=103, ncol=99)
-#'
-#'
-#'#y <- rnorm(n=103, 1, 0.5)
-#'#res[[n]] <- test_combine(match_prob, y, x, dist_family="gaussian")$influencefn_pvals
-#'y <- rbinom(n=103, 1, prob=0.5)
-#'res[[n]] <- test_combine(match_prob, y, x, dist_family="binomial")$influencefn_pvals
-#'cat(n, "/", n_sims, "\n", sep="")
-#'}
-#'size <- matrix(NA, ncol=nrow(res[[1]]), nrow=ncol(res[[1]])-2)
-#'colnames(size) <- rownames(res[[1]])
-#'rownames(size) <- colnames(res[[1]])[-(-1:0 + ncol(res[[1]]))]
-#'for(i in 1:(ncol(res[[1]])-2)){
-#'  size[i, ] <- rowMeans(sapply(res, function(m){m[, i]<0.05}), na.rm = TRUE)
-#'}
-#'size
-#'
+#'mysim <- function(i){
+#'  x <- matrix(ncol=2, nrow=99, stats::rnorm(n=99*2))
 
-test_combine <- function(match_prob, y, x,
-                     thresholds = seq(from = 0.5, to = 0.95, by = 0.05), #c(0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
+#'  #plot(density(rbeta(n=1000, 1,2)))
+#'  match_prob <- matrix(rbeta(n=103*99, 1, 2), nrow=103, ncol=99)
+#'
+#'  #y <- rnorm(n=103, mean = 1, sd = 0.5)
+#'  #return(atlas(match_prob, y, x, dist_family="gaussian")$influencefn_pvals)
+#'  y <- rbinom(n=103, size = 1, prob=0.5)
+#'  return(atlas(match_prob, y, x, dist_family="binomial")$influencefn_pvals)
+#'}
+#'#res <- pbapply::pblapply(1:n_sims, mysim, cl = parallel::detectCores()-1)
+#'res <- lapply(1:n_sims, mysim)
+#'
+#'size <- sapply(1:(ncol(res[[1]])-2), 
+#'               FUN = function(i){
+#'            rowMeans(sapply(res, function(m){m[, i]<0.05}), na.rm = TRUE)
+#'            }
+#')
+#'rownames(size) <- rownames(res[[1]])
+#'colnames(size) <- colnames(res[[1]])[-(-1:0 + ncol(res[[1]]))]
+#'size
+
+atlas <- function(match_prob, y, x, covar = NULL,
+                     thresholds = seq(from = 0.1, to = 0.9, by = 0.2), #c(0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95),
                      nb_perturb = 200,
                      dist_family = c("gaussian", "binomial"),
                      impute_strategy = c("weighted average", "best")){
@@ -144,40 +156,67 @@ test_combine <- function(match_prob, y, x,
   }
   stopifnot(impute_strategy %in% c("weighted average", "best"))
   
+  ncovvar <- ncol(covar)
+  if(is.null(ncovvar)){
+    ncovvar <- 0
+  }
+  
   # initializing results
   eta <- list()
-  ncoef <- ncol(x) +1
-  theta_avg <- matrix(NA, ncol = ncoef, nrow = length(thresholds))
+  ncoef <- ncol(x) + 1 + ncovvar
+  theta_avg <- matrix(NA, ncol = ncoef, nrow = nb_thresholds)
   rownames(theta_avg) <- as.character(thresholds)
-  wald_pvals <- matrix(NA, ncol = ncoef, nrow = length(thresholds))
+  wald_pvals <- matrix(NA, ncol = ncoef, nrow = nb_thresholds)
   rownames(wald_pvals) <- as.character(thresholds)
+  se <- matrix(NA, ncol = ncoef, nrow = nb_thresholds)
+  rownames(se) <- as.character(thresholds)
   
-  for(i in 1:length(thresholds)){
+  for(i in 1:nb_thresholds){
+    covar_junk <- covar
     cut_p <- thresholds[i]
     prob_sup_cut <- (match_prob > cut_p)
     
     #construct the data-frame for the glm
+    #gives the rows that have at least 1 match above threshold
     xi <- rowSums(prob_sup_cut) > 0
+    #number of rows with match
     n_rho <- sum(xi)
     
     y_match <- y*xi
     
-    match_prob_sel <-  diag(1*xi) %*% match_prob
+    #this is somewhat of an identity matrix * probabilities matrix to keep probs 
+    #only in rows with 1 match above threshold
+    match_prob_sel <- diag(1*xi) %*% match_prob
+    match_prob_sel <- match_prob_sel*prob_sup_cut
+    
     if(impute_strategy == "best"){
       xi_NA <- xi
       xi_NA[!xi] <- NA
       x_impute <- diag(1*xi_NA) %*% x[max.col(match_prob_sel), ]
+      #covar must have same length as outcomes length
+      if(sum(is.na(x_impute))>0 && !is.null(covar_junk)){
+        covar_junk[is.na(x_impute), ] <- NA
+      }
+      rownames(covar_junk) <- NULL
     }else if(impute_strategy == "weighted average"){
       x_impute <- match_prob_sel %*% x / rowSums(match_prob_sel) #diag(1/rowSums(match_prob_sel)) %*% match_prob_sel %*% x/rowSums(match_prob_sel)
+      if(sum(is.na(x_impute))>0 && !is.null(covar_junk)){
+        covar_junk[is.na(x_impute)] <- NA
+      }
+      rownames(covar_junk) <- NULL
     }else{
       stop("'strategy' is neither 'best' nor 'weighted average'")
     }
     
+    if(!is.null(covar_junk)){
+      x_impute <- cbind.data.frame(x_impute, covar_junk)
+    }    
     #y_match_sub <- y[xi]
     #x_best_sub <- x[max.col(match_prob[xi, ]), ]
-    #x_impute_sub <- match_prob[xi, ]%*%x/rowSums(match_prob[xi, ])
+    #x_impute_sub <- match_prob[xi, ] %*% x/rowSums(match_prob[xi, ])
     impute_fit_summary <- summary(stats::glm(y_match ~ x_impute, family = dist_family, na.action = stats::na.omit))
     theta_avg[i, ] <- impute_fit_summary$coef[, "Estimate", drop=FALSE]
+    se[i, ] <- impute_fit_summary$coef[, "Std. Error", drop=FALSE]
     if(dist_family == "binomial"){
       wald_pvals[i, ] <- impute_fit_summary$coef[, "Pr(>|z|)", drop=FALSE]
     }else if(dist_family == "gaussian"){
@@ -190,7 +229,7 @@ test_combine <- function(match_prob, y, x,
     # eta[[as.character(cut_p)]] <- 1/n_rho*solve(I_rho)%*%t(Z_sub)%*%diag(x=(y_match_sub - expit(Z_sub%*%theta)[, "Estimate"]))
     # sqrt(apply(eta[[as.character(cut_p)]], 1, crossprod))
     
-    x_impute_noNA <-  x_impute 
+    x_impute_noNA <- x_impute 
     x_impute_noNA[is.na(x_impute[, 1])] <- 0
     Z <- diag(xi) %*% stats::model.matrix( ~ x_impute_noNA)
     
@@ -211,7 +250,7 @@ test_combine <- function(match_prob, y, x,
   }
   colnames(theta_avg) <- rownames(impute_fit_summary$coefficients)
   colnames(wald_pvals) <- rownames(impute_fit_summary$coefficients)
-  
+  colnames(se) <- rownames(impute_fit_summary$coefficients)
   sigma <- list()
   sds <- matrix(ncol=ncol(theta_avg), nrow = length(thresholds))
   colnames(sds) <- colnames(theta_avg)
@@ -254,6 +293,7 @@ test_combine <- function(match_prob, y, x,
               "ptbed_pvals" = pvals_star,
               "theta_impute" = theta_avg,
               "sd_theta"=sds,
+              "std_error" = se,
               "ptbed_theta_impute" = theta_avg_star,
               "impute_strategy" = impute_strategy)
   )
