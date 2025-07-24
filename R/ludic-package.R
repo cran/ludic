@@ -8,13 +8,13 @@
 #' \tabular{ll}{
 #' Package: \tab ludic\cr
 #' Type: \tab Package\cr
-#' Version: \tab ludic 0.2.0\cr
-#' Date: \tab 2021-08-18\cr
+#' Version: \tab ludic 0.2.1\cr
+#' Date: \tab 2025-07-24\cr
 #' License: \tab \href{https://cran.r-project.org/web/licenses/MIT}{The "MIT License" (MIT)}\cr
 #' }
 #' The main function of \code{ludic} is \code{\link{recordLink}}.
 #' 
-#' @author Boris P. Hejblum, Tianxi Cai
+#' @author Boris P. Hejblum, Harrison G. Zhang, Tianxi Cai
 #' --- Maintainer: Boris P. Hejblum
 #' 
 #'@references Hejblum BP, Weber G, Liao KP, Palmer N, Churchill S, Szolovits P, 
@@ -25,14 +25,12 @@
 #'@references Zhang HG, Hejblum BP, Weber G, Palmer N, Churchill S, Szolovits P, 
 #'Murphy S, Liao KP, Kohane I and Cai T, ATLAS: An automated association test using 
 #'probabilistically linked health records with application to genetic studies, 
-#'\emph{JAMIA}, in press (2021). 
-#'\doi{10.1101/2021.05.02.21256490}.
+#'\emph{JAMIA}, 28(12):2582-2592, (2021). 
+#'\doi{10.1093/jamia/ocab187}.
 #'
-#' @docType package
 #' @name ludic-package
 #' @aliases ludic
 #' 
 #' @useDynLib ludic, .registration = TRUE
 #' @importFrom Rcpp evalCpp
-#' 
-NULL
+"_PACKAGE"

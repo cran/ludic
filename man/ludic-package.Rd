@@ -15,8 +15,8 @@ codes only, in the absence of direct identifiers .
 \tabular{ll}{
 Package: \tab ludic\cr
 Type: \tab Package\cr
-Version: \tab ludic 0.2.0\cr
-Date: \tab 2021-08-18\cr
+Version: \tab ludic 0.2.1\cr
+Date: \tab 2025-07-24\cr
 License: \tab \href{https://cran.r-project.org/web/licenses/MIT}{The "MIT License" (MIT)}\cr
 }
 The main function of \code{ludic} is \code{\link{recordLink}}.
@@ -31,9 +31,17 @@ Zhang HG, Hejblum BP, Weber G, Palmer N, Churchill S, Szolovits P,
 Murphy S, Liao KP, Kohane I and Cai T, ATLAS: An automated association test using 
 probabilistically linked health records with application to genetic studies, 
 \emph{JAMIA}, in press (2021). 
-\doi{10.1101/2021.05.02.21256490}.
+\doi{10.1093/jamia/ocab187}.
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://borishejblum.github.io/ludic/}
+  \item Report bugs at \url{https://github.com/borishejblum/ludic/issues}
+}
+
 }
 \author{
-Boris P. Hejblum, Tianxi Cai
+Boris P. Hejblum, Harrison G. Zhang, Tianxi Cai
 --- Maintainer: Boris P. Hejblum
 }
